@@ -1,1 +1,1 @@
-g++ -L./lib -I./include src/main.cpp -lmingw32 -lSDL2main -lSDL2 -o main
+g++ -L./lib -I./include src/mandelbrot.cpp -lmingw32 -lSDL2main -lSDL2 -o mandelbrot

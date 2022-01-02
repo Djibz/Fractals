@@ -3,3 +3,5 @@ main.exe
 SDL2.dll
 include/
 lib/
+mandelbrot.exe
+images/
