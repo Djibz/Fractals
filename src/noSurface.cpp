@@ -5,6 +5,10 @@
 #include <cstdint>
 #include <fstream>
 #include <string>
+#include <vector>
+#include <thread>
+#include <chrono>
+#include <ctime>
 
 using namespace std;
 
@@ -17,7 +21,7 @@ struct BmpHeader {
     uint32_t sizeOfBitmapFile = 54 + (WIDTH * HEIGHT * 3);
     uint32_t reservedBytes = 0;
     uint32_t pixelDataOffset = 54;
-    void save_on_file(std::ofstream& fout) {
+    void save_on_file(ofstream& fout) {
         fout.write(this->bitmapSignatureBytes, 2);
         fout.write((char*)&this->sizeOfBitmapFile, sizeof(uint32_t));
         fout.write((char*)&this->reservedBytes, sizeof(uint32_t));
@@ -37,7 +41,7 @@ struct BmpInfoHeader {
     int32_t verticalResolution = 3780; // in pixel per meter
     uint32_t colorTableEntries = 0;
     uint32_t importantColors = 0;
-    void save_on_file(std::ofstream& fout) {
+    void save_on_file(ofstream& fout) {
         fout.write((char*)&this->sizeOfThisHeader, sizeof(uint32_t));
         fout.write((char*)&this->width, sizeof(int32_t));
         fout.write((char*)&this->height, sizeof(int32_t));
@@ -56,7 +60,7 @@ struct Pixel {
     uint8_t blue = 255;
     uint8_t green = 255;
     uint8_t red = 0;
-    void save_on_file(std::ofstream& fout) {
+    void save_on_file(ofstream& fout) {
         fout.write((char*)&this->blue, sizeof(uint8_t));
         fout.write((char*)&this->green, sizeof(uint8_t));
         fout.write((char*)&this->red, sizeof(uint8_t));
@@ -90,9 +94,9 @@ void drawMandelbrot(long double xMin, long double xMax, long double yMin, long d
     ofstream fout(filepath, ios::binary);
     bmpHeader.save_on_file(fout);
     bmpInfoHeader.save_on_file(fout);
-
-        for(int j=0; j<HEIGHT; ++j)
-    for(int i=0; i<WIDTH; ++i)
+    Pixel pixel;
+    for(int j=0; j<HEIGHT; ++j)
+        for(int i=0; i<WIDTH; ++i)
         {
             long double x = (i / coefX) + xMin;
             long double y = (j / coefY) + yMin;
@@ -114,7 +118,7 @@ void drawMandelbrot(long double xMin, long double xMax, long double yMin, long d
             }
             pixel.save_on_file(fout);
         }
-
+    cout << nb << endl;
     fout.close();
 }
 
@@ -132,11 +136,18 @@ int main(int argc, char** argv)
     long double coefX = double(WIDTH) / (xMax - xMin);
     long double coefY = double(HEIGHT) / (yMax - yMin);
 
-    for(int i=0; i<400; ++i)
+    vector<thread> threads;
+    
+    auto start = chrono::system_clock::now();
+
+    for(int i=0; i<300; ++i)
     {
-        cout << '\r' << i << endl;
-        if(true || i > 20)
-            drawMandelbrot(xMin, xMax, yMin, yMax, coefX, coefY, i);
+        if(true || i > 290)
+        {
+            //drawMandelbrot(xMin, xMax, yMin, yMax, coefX, coefY, i);
+            threads.push_back(thread(drawMandelbrot, xMin, xMax, yMin, yMax, coefX, coefY, i));
+        }
+            
         xMin += (goalX - xMin) * zoom;
         xMax += (goalX - xMax) * zoom;
         yMin += (goalY - yMin) * zoom;
@@ -144,6 +155,25 @@ int main(int argc, char** argv)
         PRECISION *= 1 + zoom/6;
         coefX = double(WIDTH) / (xMax - xMin);
         coefY = double(HEIGHT) / (yMax - yMin);
+
+        if(threads.size() == 5)
+        {
+            for (auto &th : threads) {
+                th.join();
+            }
+            threads.clear();
+        }
     }
+
+    for (auto &th : threads) {
+        th.join();
+    }
+
+    
+
+    auto end = chrono::system_clock::now();
+    chrono::duration<double> elapsed_seconds = end-start;
+    cout << "Temps: " << elapsed_seconds.count() << "s\n";
+
     return 0;
 }
