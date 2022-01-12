@@ -5,3 +5,4 @@ include/
 lib/
 mandelbrot.exe
 images/
+final.png

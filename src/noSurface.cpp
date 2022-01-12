@@ -12,9 +12,12 @@
 
 using namespace std;
 
-#define WIDTH 1920
-#define HEIGHT 1080
-unsigned int PRECISION = 255;
+#define WIDTH 3840
+#define HEIGHT 2160
+/*#define WIDTH 1920
+#define HEIGHT 1080*/
+unsigned int PRECISION = 255*1;
+unsigned int dark = 0;
 
 struct BmpHeader {
     char bitmapSignatureBytes[2] = {'B', 'M'};
@@ -83,9 +86,14 @@ int borned(long double aX, long double aY)
     return 0;
 }
 
+int filter(int nb)
+{
+    return sin(nb * M_PI / (2*dark));
+}
+
 void drawMandelbrot(long double xMin, long double xMax, long double yMin, long double yMax, long double coefX, long double coefY, int nb)
 {
-    string filepath = "./images/";
+    string filepath = "./images/238/vv";
     string number = to_string(nb);
     for(int i=number.size(); i<6; ++i)
         filepath += '0';
@@ -104,17 +112,24 @@ void drawMandelbrot(long double xMin, long double xMax, long double yMin, long d
             int color = (2*255*pow) / PRECISION;
             if(color >= 255)
                 color = 255;
-            if(pow > 0)
+            if(color > dark)
             {
                 pixel.blue = 0;
                 pixel.green = color;
                 pixel.red = 0;
             }
-            else
+            else if (color == 0)
             {
                 pixel.blue = 255;
                 pixel.green = 255;
                 pixel.red = 255;
+            }
+            else
+            {
+                color *= filter(color);
+                pixel.blue = color;
+                pixel.green = color;
+                pixel.red = color;
             }
             pixel.save_on_file(fout);
         }
@@ -142,10 +157,17 @@ int main(int argc, char** argv)
 
     for(int i=0; i<300; ++i)
     {
-        if(true || i > 290)
+        if(i == 238)
         {
-            //drawMandelbrot(xMin, xMax, yMin, yMax, coefX, coefY, i);
-            threads.push_back(thread(drawMandelbrot, xMin, xMax, yMin, yMax, coefX, coefY, i));
+            cout << "Precision  : " << PRECISION << endl;
+            drawMandelbrot(xMin, xMax, yMin, yMax, coefX, coefY, i);
+            //threads.push_back(thread(drawMandelbrot, xMin, xMax, yMin, yMax, coefX, coefY, i));
+            /*for(int j=10; j<60; ++j)
+            {
+                dark = j;
+                drawMandelbrot(xMin, xMax, yMin, yMax, coefX, coefY, j);
+                cout << j << endl;
+            }*/
         }
             
         xMin += (goalX - xMin) * zoom;
